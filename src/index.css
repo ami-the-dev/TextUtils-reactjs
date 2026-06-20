@@ -294,7 +294,7 @@ textarea.form-control {
   font-family: var(--font-display);
   font-weight: 500;
   font-size: 22px;
-  color: var(--text-primary) !important;
+  color: #22D3EE !important;
 }
 
 .navbar .nav-link {

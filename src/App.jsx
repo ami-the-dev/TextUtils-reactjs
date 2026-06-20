@@ -8,6 +8,8 @@ import GoogleKeywordPlanner from './components/GoogleKeywordPlanner';
 import PlagiarismChecker from './components/PlagiarismChecker';
 import SeoMatrics from './components/SeoMatrics';
 import AiTools from './components/AiTools';
+import Footer from './components/Footer';
+import siteConfig from './siteConfig';
 import './App.css';
 
 function App() {
@@ -23,6 +25,19 @@ function App() {
     localStorage.setItem('theme', mode);
   }, [mode]);
 
+  useEffect(() => {
+    const path = window.location.pathname.replace('/TextUtils-reactjs', '') || '/';
+    const titles = {
+      '/': siteConfig.home.title,
+      '/about': siteConfig.about.title,
+      '/GoogleKeywordPlanner': siteConfig.keywordPlanner.title,
+      '/PlagiarismChecker': siteConfig.plagiarismChecker.title,
+      '/SeoTool': siteConfig.seo.title,
+      '/AiTools': siteConfig.ai.title,
+    };
+    document.title = titles[path] || siteConfig.name + ' — ' + siteConfig.tagline;
+  }, []);
+
   const showAlert = (msg, type) => {
     setAlert({ msg, type });
     setTimeout(() => setAlert(null), 1500);
@@ -37,7 +52,7 @@ function App() {
   };
 
   return (
-    <div style={{ backgroundColor: 'var(--bg-primary)', minHeight: '100vh' }}>
+    <div style={{ backgroundColor: 'var(--bg-primary)', minHeight: '100vh', paddingTop: 56 }}>
       <Navbar mode={mode} toggleMode={toggleMode} />
       <Alert alert={alert} />
       <Switch>
@@ -60,6 +75,7 @@ function App() {
           <AiTools />
         </Route>
       </Switch>
+      <Footer />
     </div>
   );
 }

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import siteConfig from '../siteConfig';
 
 const labelStyle = {
   fontFamily: 'var(--font-body)',
@@ -345,8 +346,11 @@ export default function SeoMatrics() {
     setGapResult({ wordCount, headingCount, imgCount, linkCount, gaps, target });
   };
 
+  const xmlEscape = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&apos;');
+
   const handleGenerateSitemap = () => {
     const base = sitemapBaseUrl.replace(/\/+$/, '');
+    if (!base.match(/^https?:\/\//i)) return;
     const paths = sitemapPages.split('\n').map((p) => p.trim()).filter(Boolean);
     const date = sitemapDate || new Date().toISOString().split('T')[0];
     let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
@@ -354,10 +358,10 @@ export default function SeoMatrics() {
     for (const path of paths) {
       const loc = path.startsWith('/') ? `${base}${path}` : `${base}/${path}`;
       xml += '  <url>\n';
-      xml += `    <loc>${loc.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</loc>\n`;
-      xml += `    <lastmod>${date}</lastmod>\n`;
-      xml += `    <changefreq>${sitemapFreq}</changefreq>\n`;
-      xml += `    <priority>${sitemapPriority}</priority>\n`;
+      xml += `    <loc>${xmlEscape(loc)}</loc>\n`;
+      xml += `    <lastmod>${xmlEscape(date)}</lastmod>\n`;
+      xml += `    <changefreq>${xmlEscape(sitemapFreq)}</changefreq>\n`;
+      xml += `    <priority>${xmlEscape(sitemapPriority)}</priority>\n`;
       xml += '  </url>\n';
     }
     xml += '</urlset>';
@@ -367,7 +371,8 @@ export default function SeoMatrics() {
   const handleFetchSitemapUrls = async () => {
     if (!sitemapBaseUrl.trim()) return;
     setSitemapFetching(true);
-    const base = sitemapBaseUrl.match(/^https?:\/\//) ? sitemapBaseUrl.replace(/\/+$/, '') : `https://${sitemapBaseUrl.replace(/\/+$/, '')}`;
+    let base = sitemapBaseUrl.match(/^https?:\/\//) ? sitemapBaseUrl.replace(/\/+$/, '') : `https://${sitemapBaseUrl.replace(/\/+$/, '')}`;
+    if (!base.startsWith('https://')) { setSitemapFetching(false); return; }
     const proxy = 'https://corsproxy.io/?url=';
     const allPaths = new Set();
     const seen = new Set();
@@ -377,10 +382,10 @@ export default function SeoMatrics() {
     const extractPaths = (html, pageUrl) => {
       const hostname = new URL(base).hostname;
       const found = [];
-      const aRe = /<a[^>]*href=["']([^"']+)["'][^>]*>/gi;
-      let m;
-      while ((m = aRe.exec(html)) !== null) {
-        let href = m[1].split('#')[0];
+      const doc = new DOMParser().parseFromString(html, 'text/html');
+      const anchors = doc.querySelectorAll('a[href]');
+      for (const a of anchors) {
+        let href = a.getAttribute('href').split('#')[0];
         if (!href || href.startsWith('javascript:') || href.startsWith('mailto:') || href.startsWith('tel:')) continue;
         try {
           const url = new URL(href, pageUrl);
@@ -457,7 +462,7 @@ export default function SeoMatrics() {
         <div className="col-md-3">
           <div className="card">
             <div className="card-header">
-              <h2 className="mb-0" style={{ fontFamily: 'var(--font-display)', fontWeight: 500, fontSize: 16 }}>SEO Tools</h2>
+              <h2 className="mb-0" style={{ fontFamily: 'var(--font-display)', fontWeight: 500, fontSize: 16 }}>{siteConfig.seo.sidebarLabel}</h2>
             </div>
             <div className="card-body p-2">
               {sidebarItems.map((item) => (

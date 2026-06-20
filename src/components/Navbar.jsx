@@ -1,15 +1,16 @@
 import React from 'react';
 import { Link, NavLink } from 'react-router-dom';
 import { Sun, Moon } from 'lucide-react';
+import siteConfig from '../siteConfig';
 
 export default function Navbar({ mode, toggleMode }) {
   const isDark = mode === 'dark';
 
   return (
-    <nav className="navbar navbar-expand-lg">
+    <nav className="navbar navbar-expand-lg" style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 1030 }}>
       <div className="container">
         <Link className="navbar-brand" to="/">
-          TextUtils
+          {siteConfig.nav.brand}
         </Link>
         <button
           className="navbar-toggler"
@@ -24,36 +25,13 @@ export default function Navbar({ mode, toggleMode }) {
         </button>
         <div className="collapse navbar-collapse" id="navbarNav">
           <ul className="navbar-nav me-auto">
-            <li className="nav-item">
-              <NavLink className="nav-link" exact to="/">
-                Home
-              </NavLink>
-            </li>
-            <li className="nav-item">
-              <NavLink className="nav-link" to="/about">
-                About
-              </NavLink>
-            </li>
-            <li className="nav-item">
-              <NavLink className="nav-link" to="/GoogleKeywordPlanner">
-                Keyword Planner
-              </NavLink>
-            </li>
-            <li className="nav-item">
-              <NavLink className="nav-link" to="/PlagiarismChecker">
-                Plagiarism Checker
-              </NavLink>
-            </li>
-            <li className="nav-item">
-              <NavLink className="nav-link" to="/SeoTool">
-                SEO Tool
-              </NavLink>
-            </li>
-            <li className="nav-item">
-              <NavLink className="nav-link" to="/AiTools">
-                AI Tools
-              </NavLink>
-            </li>
+            {siteConfig.nav.links.map((link) => (
+              <li key={link.to} className="nav-item">
+                <NavLink className="nav-link" exact={link.exact} to={link.to}>
+                  {link.label}
+                </NavLink>
+              </li>
+            ))}
           </ul>
           <div className="d-flex align-items-center gap-3">
             <div className="d-flex gap-1">

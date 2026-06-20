@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import siteConfig from '../siteConfig';
 
 const labelStyle = {
   fontFamily: 'var(--font-body)',
@@ -227,6 +228,22 @@ export default function AiTools() {
   const [llmstxtOutput, setLlmstxtOutput] = useState('');
   const [llmstxtLoading, setLlmstxtLoading] = useState(false);
 
+  const [designBrand, setDesignBrand] = useState('');
+  const [designTagline, setDesignTagline] = useState('');
+  const [designPrimary, setDesignPrimary] = useState('#22D3EE');
+  const [designSecondary, setDesignSecondary] = useState('#3B82F6');
+  const [designAccent, setDesignAccent] = useState('#8B5CF6');
+  const [designBg, setDesignBg] = useState('#000000');
+  const [designSurface, setDesignSurface] = useState('#18181B');
+  const [designText, setDesignText] = useState('#FFFFFF');
+  const [designHeadingFont, setDesignHeadingFont] = useState('Inter');
+  const [designBodyFont, setDesignBodyFont] = useState('JetBrains Mono');
+  const [designRadius, setDesignRadius] = useState(8);
+  const [designSpacing, setDesignSpacing] = useState(8);
+  const [designTemplate, setDesignTemplate] = useState('custom');
+  const [designOutput, setDesignOutput] = useState('');
+  const [designActiveColor, setDesignActiveColor] = useState('primary');
+
   const runCurrent = () => {
     if (!input.trim()) return;
     switch (tab) {
@@ -255,7 +272,8 @@ export default function AiTools() {
     if (!llmstxtUrl.trim()) return;
     setLlmstxtLoading(true);
     setLlmstxtOutput('');
-    const host = llmstxtUrl.match(/^https?:\/\//) ? llmstxtUrl : `https://${llmstxtUrl}`;
+    let host = llmstxtUrl.match(/^https?:\/\//) ? llmstxtUrl : `https://${llmstxtUrl}`;
+    if (!host.startsWith('https://')) { setLlmstxtLoading(false); return; }
     const origin = host.replace(/\/+$/, '');
     const siteName = llmstxtName.trim() || new URL(origin).hostname;
     const proxy = 'https://corsproxy.io/?url=';
@@ -267,22 +285,24 @@ export default function AiTools() {
     const queue = [];
 
     const extractMeta = (html) => {
-      const m = html.match(/<meta[^>]*name=["']description["'][^>]*content=["']([^"']+)["']/i);
-      return m ? m[1] : '';
+      const doc = new DOMParser().parseFromString(html, 'text/html');
+      const el = doc.querySelector('meta[name="description"]');
+      return el ? el.getAttribute('content') || '' : '';
     };
 
     const extractTitle = (html) => {
-      const m = html.match(/<title>([^<]*)<\/title>/i);
-      return m ? m[1].trim() : '';
+      const doc = new DOMParser().parseFromString(html, 'text/html');
+      const t = doc.querySelector('title');
+      return t ? t.textContent.trim() : '';
     };
 
     const extractLinks = (html, pageUrl) => {
       const hostname = new URL(origin).hostname;
       const found = [];
-      const aRe = /<a[^>]*href=["']([^"']+)["'][^>]*>/gi;
-      let m;
-      while ((m = aRe.exec(html)) !== null) {
-        let href = m[1].split('#')[0];
+      const doc = new DOMParser().parseFromString(html, 'text/html');
+      const anchors = doc.querySelectorAll('a[href]');
+      for (const a of anchors) {
+        let href = a.getAttribute('href').split('#')[0];
         if (!href || href.startsWith('javascript:') || href.startsWith('mailto:') || href.startsWith('tel:')) continue;
         try {
           const url = new URL(href, pageUrl);
@@ -392,6 +412,87 @@ export default function AiTools() {
     setLlmstxtLoading(false);
   };
 
+  const designTemplates = {
+    'nexora': {
+      primary: '#22D3EE', secondary: '#3B82F6', accent: '#8B5CF6',
+      bg: '#000000', surface: '#18181B', text: '#FFFFFF',
+      headingFont: 'Inter', bodyFont: 'JetBrains Mono',
+      radius: 8, spacing: 8, name: 'Nexora Systems',
+      tagline: 'Modern AI-Native Design System',
+    },
+    'tailwind': {
+      primary: '#3B82F6', secondary: '#8B5CF6', accent: '#EC4899',
+      bg: '#0F172A', surface: '#1E293B', text: '#F8FAFC',
+      headingFont: 'Inter', bodyFont: 'Inter',
+      radius: 8, spacing: 4, name: 'Tailwind Inspired',
+      tagline: 'Utility-First Design Language',
+    },
+    'material': {
+      primary: '#1976D2', secondary: '#9C27B0', accent: '#F44336',
+      bg: '#121212', surface: '#1E1E1E', text: '#FFFFFF',
+      headingFont: 'Roboto', bodyFont: 'Roboto',
+      radius: 4, spacing: 8, name: 'Material Design',
+      tagline: 'Material Design 3 Inspired',
+    },
+    'minimal': {
+      primary: '#000000', secondary: '#404040', accent: '#6366F1',
+      bg: '#FFFFFF', surface: '#F5F5F5', text: '#000000',
+      headingFont: 'SF Pro Display', bodyFont: 'SF Pro Text',
+      radius: 0, spacing: 12, name: 'Minimal',
+      tagline: 'Less is More',
+    },
+    'cyber': {
+      primary: '#00FF41', secondary: '#00BFFF', accent: '#FF00FF',
+      bg: '#0A0A0A', surface: '#1A1A1A', text: '#00FF41',
+      headingFont: 'Orbitron', bodyFont: 'JetBrains Mono',
+      radius: 2, spacing: 8, name: 'Cyberpunk',
+      tagline: 'High Voltage Design',
+    },
+    'glass': {
+      primary: '#FFFFFF', secondary: '#E2E8F0', accent: '#818CF8',
+      bg: '#0F0F1A', surface: 'rgba(255,255,255,0.08)', text: '#F1F5F9',
+      headingFont: 'Inter', bodyFont: 'Inter',
+      radius: 16, spacing: 8, name: 'Glassmorphism',
+      tagline: 'Frosted Glass Aesthetic',
+    },
+  };
+
+  const applyDesignTemplate = (key) => {
+    const t = designTemplates[key];
+    if (!t) return;
+    setDesignTemplate(key);
+    setDesignBrand(t.name);
+    setDesignTagline(t.tagline);
+    setDesignPrimary(t.primary);
+    setDesignSecondary(t.secondary);
+    setDesignAccent(t.accent);
+    setDesignBg(t.bg);
+    setDesignSurface(t.surface);
+    setDesignText(t.text);
+    setDesignHeadingFont(t.headingFont);
+    setDesignBodyFont(t.bodyFont);
+    setDesignRadius(t.radius);
+    setDesignSpacing(t.spacing);
+  };
+
+  const handleGenerateDesignMd = () => {
+    const brand = designBrand.trim() || 'Your Brand';
+    const tagline = designTagline.trim() || 'A modern web application';
+    const d = new Date();
+    const dateStr = d.toISOString().split('T')[0];
+
+    let md = `# ${brand} — Design System Documentation\n\n`;
+    md += `> **Tagline:** ${tagline}\n> **Version:** 1.0.0\n> **Last Updated:** ${dateStr}\n\n`;
+    md += `## Overview\n\nThis document defines the design tokens, components, and patterns used across ${brand}. It serves as the single source of truth for visual consistency.\n\n`;
+    md += `## Design Philosophy\n\n${brand} follows a modern, accessible, and performance-first approach. Every design decision prioritizes clarity, usability, and aesthetic cohesion.\n\n`;
+    md += `## Brand Identity\n\n| Token | Value |\n|-------|-------|\n| Brand Name | ${brand} |\n| Tagline | ${tagline} |\n| Design System | ${designTemplate.charAt(0).toUpperCase() + designTemplate.slice(1)} |\n| Base Unit | ${designSpacing}px |\n| Border Radius | ${designRadius}px |\n\n`;
+    md += `## Color Palette\n\n### Core Colors\n\n| Token | Hex | Usage |\n|-------|-----|-------|\n| Primary | \`${designPrimary}\` | Buttons, links, active states, brand accents |\n| Secondary | \`${designSecondary}\` | Secondary buttons, highlights, supporting UI |\n| Accent | \`${designAccent}\` | Call-to-action, special emphasis, decorative elements |\n\n### Surface & Background\n\n| Token | Hex | Usage |\n|-------|-----|-------|\n| Background | \`${designBg}\` | Page background |\n| Surface | \`${designSurface}\` | Cards, modals, dropdowns, elevated containers |\n| Text Primary | \`${designText}\` | Body copy, headings, primary content |\n\n### Semantic Colors\n\n| Token | Hex | Usage |\n|-------|-----|-------|\n| Success | \`#10B981\` | Confirmations, success states |\n| Warning | \`#F59E0B\` | Warnings, non-critical alerts |\n| Error | \`#EF4444\` | Errors, destructive actions |\n| Info | \`${designSecondary}\` | Informational messages |\n\n## Typography\n\n| Property | Value |\n|----------|-------|\n| Heading Font | \`${designHeadingFont}\` |\n| Body Font | \`${designBodyFont}\` |\n| Base Size | 16px |\n| Scale Ratio | 1.25 (Major Third) |\n\n### Type Scale\n\n| Level | Size | Weight | Line Height |\n|-------|------|--------|-------------|\n| Display | 48px | 700 | 1.1 |\n| H1 | 36px | 600 | 1.2 |\n| H2 | 28px | 600 | 1.25 |\n| H3 | 22px | 600 | 1.3 |\n| H4 | 18px | 600 | 1.35 |\n| Body | 16px | 400 | 1.6 |\n| Small | 14px | 400 | 1.5 |\n| Caption | 12px | 500 | 1.4 |\n| Label | 12px | 600 | 1.2 |\n\n## Spacing System\n\nBased on a ${designSpacing}px base unit:\n\n| Token | Value | Rem |\n|-------|-------|-----|\n| Space-1 | ${designSpacing}px | ${designSpacing / 16}rem |\n| Space-2 | ${designSpacing * 2}px | ${designSpacing * 2 / 16}rem |\n| Space-3 | ${designSpacing * 3}px | ${designSpacing * 3 / 16}rem |\n| Space-4 | ${designSpacing * 4}px | ${designSpacing * 4 / 16}rem |\n| Space-6 | ${designSpacing * 6}px | ${designSpacing * 6 / 16}rem |\n| Space-8 | ${designSpacing * 8}px | ${designSpacing * 8 / 16}rem |\n| Space-12 | ${designSpacing * 12}px | ${designSpacing * 12 / 16}rem |\n| Space-16 | ${designSpacing * 16}px | ${designSpacing * 16 / 16}rem |\n\n## Border Radius\n\n| Token | Value |\n|-------|-------|\n| Radius-Sm | ${Math.max(designRadius / 2, 2)}px |\n| Radius-Md | ${designRadius}px |\n| Radius-Lg | ${designRadius * 2}px |\n| Radius-Xl | ${designRadius * 3}px |\n| Radius-Pill | 9999px |\n\n## Shadow Tokens\n\n| Token | Value |\n|-------|-------|\n| Shadow-Sm | \`0 1px 2px rgba(0,0,0,0.1)\` |\n| Shadow-Md | \`0 4px 6px rgba(0,0,0,0.15)\` |\n| Shadow-Lg | \`0 10px 15px rgba(0,0,0,0.2)\` |\n| Shadow-Xl | \`0 20px 25px rgba(0,0,0,0.25)\` |\n\n## Component Examples\n\n### Buttons\n\n\`\`\`css\n.btn-primary {\n  background: ${designPrimary};\n  color: #000;\n  border: none;\n  padding: ${designSpacing}px ${designSpacing * 3}px;\n  border-radius: ${designRadius}px;\n  font-family: '${designBodyFont}', monospace;\n  font-weight: 600;\n  cursor: pointer;\n  transition: all 0.15s ease;\n}\n\n.btn-primary:hover {\n  filter: brightness(1.1);\n}\n\n.btn-secondary {\n  background: transparent;\n  color: ${designPrimary};\n  border: 1px solid ${designPrimary};\n  padding: ${designSpacing}px ${designSpacing * 3}px;\n  border-radius: ${designRadius}px;\n  font-family: '${designBodyFont}', monospace;\n  font-weight: 600;\n  cursor: pointer;\n}\n\`\`\`\n\n### Cards\n\n\`\`\`css\n.card {\n  background: ${designSurface};\n  border: 1px solid color-mix(in srgb, ${designText} 10%, transparent);\n  border-radius: ${designRadius}px;\n  padding: ${designSpacing * 3}px;\n  transition: box-shadow 0.2s ease;\n}\n\n.card:hover {\n  box-shadow: 0 4px 12px rgba(0,0,0,0.2);\n}\n\`\`\`\n\n### Inputs\n\n\`\`\`css\ninput, textarea, select {\n  background: ${designSurface};\n  border: 1px solid color-mix(in srgb, ${designText} 20%, transparent);\n  border-radius: ${designRadius}px;\n  padding: ${designSpacing}px ${designSpacing * 2}px;\n  color: ${designText};\n  font-family: '${designBodyFont}', monospace;\n  font-size: 14px;\n  transition: border-color 0.15s;\n}\n\ninput:focus, textarea:focus, select:focus {\n  outline: none;\n  border-color: ${designPrimary};\n  box-shadow: 0 0 0 2px color-mix(in srgb, ${designPrimary} 25%, transparent);\n}\n\`\`\`\n\n## Accessibility\n\n- All color combinations meet WCAG AA contrast ratios\n- Focus indicators use a 2px solid ${designPrimary} ring\n- Interactive elements are keyboard navigable\n- Support for \`prefers-reduced-motion\` media query\n- Semantic HTML structure with proper ARIA labels\n\n## Responsive Breakpoints\n\n| Breakpoint | Width |\n|------------|-------|\n| Mobile | < 640px |\n| Tablet | 640px - 1024px |\n| Desktop | > 1024px |\n| Wide | > 1440px |\n\n## Animation & Motion\n\n| Property | Duration | Easing |\n|----------|----------|--------|\n| Hover | 150ms | ease |\n| Enter | 200ms | ease-out |\n| Exit | 150ms | ease-in |\n| Page Transition | 300ms | ease-in-out |\n\n## Installation (CSS Variables)\n\n\`\`\`css\n:root {\n  --color-primary: ${designPrimary};\n  --color-secondary: ${designSecondary};\n  --color-accent: ${designAccent};\n  --bg-primary: ${designBg};\n  --bg-surface: ${designSurface};\n  --text-primary: ${designText};\n  --font-display: '${designHeadingFont}', sans-serif;\n  --font-body: '${designBodyFont}', monospace;\n  --radius: ${designRadius}px;\n  --spacing-unit: ${designSpacing}px;\n}\n\`\`\`\n\n---
+
+*This DESIGN.md was generated by TextUtils Design System Generator. Update values as your design evolves.*\n`;
+
+    setDesignOutput(md.trim());
+  };
+
   const mdRef = React.createRef();
 
   const insertMarkdown = (before, after = '') => {
@@ -409,6 +510,14 @@ export default function AiTools() {
     }, 0);
   };
 
+  const sanitizeUrl = (url) => {
+    try {
+      const u = new URL(url, 'https://safe.local');
+      if (['http:', 'https:', 'mailto:', 'tel:'].includes(u.protocol)) return url;
+    } catch {}
+    return '';
+  };
+
   const renderMarkdown = (md) => {
     if (!md) return '';
     let html = md
@@ -424,8 +533,14 @@ export default function AiTools() {
       .replace(/\*(.+?)\*/g, '<em>$1</em>')
       .replace(/~~(.+?)~~/g, '<del>$1</del>')
       .replace(/`(.+?)`/g, '<code style="background:#27272A;padding:2px 6px;border-radius:4px;font-size:12px;color:#22D3EE">$1</code>')
-      .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1" style="max-width:100%;border-radius:8px;margin:8px 0">')
-      .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" style="color:#22D3EE">$1</a>')
+      .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (match, alt, url) => {
+        const safe = sanitizeUrl(url);
+        return safe ? `<img src="${safe}" alt="${alt}" style="max-width:100%;border-radius:8px;margin:8px 0">` : '';
+      })
+      .replace(/\[([^\]]+)\]\(([^)]+)\)/g, (match, text, url) => {
+        const safe = sanitizeUrl(url);
+        return safe ? `<a href="${safe}" target="_blank" rel="noopener noreferrer" style="color:#22D3EE">${text}</a>` : text;
+      })
       .replace(/^###### (.+)$/gm, '<h6>$1</h6>')
       .replace(/^##### (.+)$/gm, '<h6>$1</h6>')
       .replace(/^#### (.+)$/gm, '<h6>$1</h6>');
@@ -479,6 +594,7 @@ export default function AiTools() {
     { key: 'skill', label: 'Skill Generator' },
     { key: 'md', label: 'MD Editor' },
     { key: 'llmstxt', label: 'LLMs.txt' },
+    { key: 'designmd', label: 'DESIGN.md' },
   ];
 
   return (
@@ -488,7 +604,7 @@ export default function AiTools() {
         <div className="col-md-3">
           <div className="card">
             <div className="card-header">
-              <h2 className="mb-0" style={{ fontFamily: 'var(--font-display)', fontWeight: 500, fontSize: 16 }}>AI Tools</h2>
+              <h2 className="mb-0" style={{ fontFamily: 'var(--font-display)', fontWeight: 500, fontSize: 16 }}>{siteConfig.ai.sidebarLabel}</h2>
             </div>
             <div className="card-body p-2">
               {sidebarItems.map((item) => (
@@ -802,6 +918,137 @@ export default function AiTools() {
                 {!llmstxtOutput && (
                   <div className="text-center py-4" style={{ color: 'var(--text-secondary)', fontFamily: 'var(--font-body)', fontSize: 14 }}>
                     Enter a URL and optional pages, then click Generate.
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* ─── DESIGN.MD GENERATOR ─── */}
+          {tab === 'designmd' && (
+            <div className="card">
+              <div className="card-header" style={{ flexShrink: 0, backgroundColor: 'var(--bg-surface)' }}>
+                <h2 className="mb-0" style={{ fontFamily: 'var(--font-display)', fontWeight: 500, fontSize: 20 }}>DESIGN.md Generator</h2>
+              </div>
+              <div className="card-body">
+                <p style={{ color: 'var(--text-secondary)', fontSize: 14, fontFamily: 'var(--font-body)', marginBottom: 16 }}>Generate a comprehensive <strong>DESIGN.md</strong> file for AI web design — design tokens, components, and system documentation for your project.</p>
+
+                <div className="row g-3 mb-3">
+                  <div className="col-12">
+                    <div style={labelStyle}>Quick Templates</div>
+                    <div className="d-flex flex-wrap gap-2">
+                      {Object.entries(designTemplates).map(([key, tmpl]) => (
+                        <button key={key} className="btn btn-primary" style={{ fontSize: 11, padding: '4px 12px', backgroundColor: designTemplate === key ? '#22D3EE' : '#27272A', color: designTemplate === key ? '#000' : '#fff', border: '1px solid #27272A' }} onClick={() => applyDesignTemplate(key)}>{tmpl.name}</button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="row g-3 mb-3">
+                  <div className="col-md-6">
+                    <div style={labelStyle}>Brand Name</div>
+                    <input type="text" className="form-control" placeholder="e.g. Nexora Systems" value={designBrand} onChange={(e) => setDesignBrand(e.target.value)} />
+                  </div>
+                  <div className="col-md-6">
+                    <div style={labelStyle}>Tagline</div>
+                    <input type="text" className="form-control" placeholder="e.g. Modern AI-Native Design" value={designTagline} onChange={(e) => setDesignTagline(e.target.value)} />
+                  </div>
+                </div>
+
+                <div className="row g-3 mb-3">
+                  <div className="col-md-3">
+                    <div style={labelStyle}>Primary Color</div>
+                    <div className="d-flex gap-2 align-items-center" style={{ fontFamily: 'var(--font-body)', fontSize: 13 }}>
+                      <input type="color" value={designPrimary} onChange={(e) => { setDesignPrimary(e.target.value); setDesignTemplate('custom'); }} style={{ width: 40, height: 36, padding: 0, border: '1px solid var(--bg-border)', borderRadius: 6, cursor: 'pointer', background: 'none' }} />
+                      <input type="text" className="form-control" value={designPrimary} onChange={(e) => { setDesignPrimary(e.target.value); setDesignTemplate('custom'); }} style={{ fontFamily: 'var(--font-body)', fontSize: 13 }} />
+                    </div>
+                  </div>
+                  <div className="col-md-3">
+                    <div style={labelStyle}>Secondary Color</div>
+                    <div className="d-flex gap-2 align-items-center" style={{ fontFamily: 'var(--font-body)', fontSize: 13 }}>
+                      <input type="color" value={designSecondary} onChange={(e) => { setDesignSecondary(e.target.value); setDesignTemplate('custom'); }} style={{ width: 40, height: 36, padding: 0, border: '1px solid var(--bg-border)', borderRadius: 6, cursor: 'pointer', background: 'none' }} />
+                      <input type="text" className="form-control" value={designSecondary} onChange={(e) => { setDesignSecondary(e.target.value); setDesignTemplate('custom'); }} style={{ fontFamily: 'var(--font-body)', fontSize: 13 }} />
+                    </div>
+                  </div>
+                  <div className="col-md-3">
+                    <div style={labelStyle}>Accent Color</div>
+                    <div className="d-flex gap-2 align-items-center">
+                      <input type="color" value={designAccent} onChange={(e) => { setDesignAccent(e.target.value); setDesignTemplate('custom'); }} style={{ width: 40, height: 36, padding: 0, border: '1px solid var(--bg-border)', borderRadius: 6, cursor: 'pointer', background: 'none' }} />
+                      <input type="text" className="form-control" value={designAccent} onChange={(e) => { setDesignAccent(e.target.value); setDesignTemplate('custom'); }} style={{ fontFamily: 'var(--font-body)', fontSize: 13 }} />
+                    </div>
+                  </div>
+                  <div className="col-md-3">
+                    <div style={labelStyle}>Text Color</div>
+                    <div className="d-flex gap-2 align-items-center">
+                      <input type="color" value={designText} onChange={(e) => setDesignText(e.target.value)} style={{ width: 40, height: 36, padding: 0, border: '1px solid var(--bg-border)', borderRadius: 6, cursor: 'pointer', background: 'none' }} />
+                      <input type="text" className="form-control" value={designText} onChange={(e) => setDesignText(e.target.value)} style={{ fontFamily: 'var(--font-body)', fontSize: 13 }} />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="row g-3 mb-3">
+                  <div className="col-md-3">
+                    <div style={labelStyle}>Background Color</div>
+                    <div className="d-flex gap-2 align-items-center">
+                      <input type="color" value={designBg} onChange={(e) => setDesignBg(e.target.value)} style={{ width: 40, height: 36, padding: 0, border: '1px solid var(--bg-border)', borderRadius: 6, cursor: 'pointer', background: 'none' }} />
+                      <input type="text" className="form-control" value={designBg} onChange={(e) => setDesignBg(e.target.value)} style={{ fontFamily: 'var(--font-body)', fontSize: 13 }} />
+                    </div>
+                  </div>
+                  <div className="col-md-3">
+                    <div style={labelStyle}>Surface Color</div>
+                    <div className="d-flex gap-2 align-items-center">
+                      <input type="color" value={designSurface} onChange={(e) => setDesignSurface(e.target.value)} style={{ width: 40, height: 36, padding: 0, border: '1px solid var(--bg-border)', borderRadius: 6, cursor: 'pointer', background: 'none' }} />
+                      <input type="text" className="form-control" value={designSurface} onChange={(e) => setDesignSurface(e.target.value)} style={{ fontFamily: 'var(--font-body)', fontSize: 13 }} />
+                    </div>
+                  </div>
+                  <div className="col-md-3">
+                    <div style={labelStyle}>Heading Font</div>
+                    <input type="text" className="form-control" value={designHeadingFont} onChange={(e) => setDesignHeadingFont(e.target.value)} style={{ fontFamily: 'var(--font-body)', fontSize: 13 }} />
+                  </div>
+                  <div className="col-md-3">
+                    <div style={labelStyle}>Body Font</div>
+                    <input type="text" className="form-control" value={designBodyFont} onChange={(e) => setDesignBodyFont(e.target.value)} style={{ fontFamily: 'var(--font-body)', fontSize: 13 }} />
+                  </div>
+                </div>
+
+                <div className="row g-3 mb-3">
+                  <div className="col-md-3">
+                    <div style={labelStyle}>Base Radius (px)</div>
+                    <input type="range" min="0" max="24" value={designRadius} onChange={(e) => setDesignRadius(Number(e.target.value))} style={{ width: '100%' }} />
+                    <div style={{ fontFamily: 'var(--font-body)', fontSize: 12, color: 'var(--text-secondary)', textAlign: 'center' }}>{designRadius}px</div>
+                  </div>
+                  <div className="col-md-3">
+                    <div style={labelStyle}>Base Spacing (px)</div>
+                    <input type="range" min="2" max="24" value={designSpacing} onChange={(e) => setDesignSpacing(Number(e.target.value))} style={{ width: '100%' }} />
+                    <div style={{ fontFamily: 'var(--font-body)', fontSize: 12, color: 'var(--text-secondary)', textAlign: 'center' }}>{designSpacing}px</div>
+                  </div>
+                  <div className="col-md-6"></div>
+                </div>
+
+                <div className="row g-3 mb-3">
+                  <div className="col-12">
+                    <button className="btn btn-primary" onClick={handleGenerateDesignMd} disabled={!designBrand.trim() && designTemplate === 'custom'}>Generate DESIGN.md</button>
+                  </div>
+                </div>
+
+                {designOutput && (
+                  <div>
+                    <div className="d-flex justify-content-between align-items-center mb-2">
+                      <div style={labelStyle}>Generated DESIGN.md</div>
+                      <div className="d-flex gap-2">
+                        <button className="btn btn-primary" style={{ fontSize: 12, padding: '4px 12px' }} onClick={() => navigator.clipboard.writeText(designOutput)}>Copy</button>
+                        <button className="btn btn-primary" style={{ fontSize: 12, padding: '4px 12px' }} onClick={() => {
+                          const blob = new Blob([designOutput], { type: 'text/markdown' });
+                          const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'DESIGN.md'; a.click(); URL.revokeObjectURL(a.href);
+                        }}>Download</button>
+                      </div>
+                    </div>
+                    <pre className="p-3 rounded" style={{ backgroundColor: 'var(--bg-elevated)', border: '1px solid var(--bg-border)', fontSize: 13, lineHeight: 1.5, fontFamily: 'var(--font-body)', color: 'var(--text-primary)', whiteSpace: 'pre-wrap', wordBreak: 'break-all', maxHeight: 500, overflow: 'auto', margin: 0 }}>{designOutput}</pre>
+                  </div>
+                )}
+                {!designOutput && (
+                  <div className="text-center py-4" style={{ color: 'var(--text-secondary)', fontFamily: 'var(--font-body)', fontSize: 14 }}>
+                    Choose a template or customize colors, then click Generate DESIGN.md.
                   </div>
                 )}
               </div>
