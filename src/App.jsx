@@ -53,7 +53,7 @@ function App() {
 
   return (
     <div style={{ backgroundColor: 'var(--bg-primary)', minHeight: '100vh', paddingTop: 56 }}>
-      <Navbar mode={mode} toggleMode={toggleMode} />
+      <Navbar />
       <Alert alert={alert} />
       <Switch>
         <Route exact path="/">
